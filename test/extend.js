@@ -566,6 +566,20 @@ describe('extension', () => {
         expect(special.validate(1).error).to.be.an.error('shit happens');
     });
 
+    it('rejects a language named __proto__', () => {
+
+        const messages = JSON.parse('{"__proto__":{"string.base":"pwned"}}');
+        const extend = () => Joi.extend({ type: 'special', base: Joi.string(), messages });
+
+        try {
+            expect(extend).to.throw('Cannot use __proto__ as a language');
+            expect({}['string.base']).to.not.exist();
+        }
+        finally {
+            delete Object.prototype['string.base'];
+        }
+    });
+
     it('overrides specific error messages with template', () => {
 
         const custom = Joi.extend({

@@ -2027,6 +2027,35 @@ describe('any', () => {
             Helper.validate(schema, [[{ a: 1 }, false, '"a" angustus']]);
         });
 
+        it('rejects a language named __proto__', () => {
+
+            // Object.prototype stays clean, but the assignment replaces the compiled messages object's own
+            // prototype with the language, so its codes resolve through inheritance
+
+            const messages = JSON.parse('{"__proto__":{"number.min":"pwned","hasOwnProperty":"y"}}');
+
+            try {
+                expect(() => Joi.number().min(10).messages(messages)).to.throw('Cannot use __proto__ as a language');
+                expect(() => Joi.number().min(10).prefs({ messages })).to.throw('Cannot use __proto__ as a language');
+                expect(() => Joi.number().min(10).validate(1, { messages })).to.throw('Cannot use __proto__ as a language');
+                expect({}['number.min']).to.not.exist();
+            }
+            finally {
+                delete Object.prototype['number.min'];
+            }
+        });
+
+        it('does not pollute Object with a language named constructor', () => {
+
+            try {
+                Joi.any().messages({ constructor: { 'number.min': 'too small' } });
+                expect(Object['number.min']).to.not.exist();
+            }
+            finally {
+                delete Object['number.min'];
+            }
+        });
+
         it('errors on invalid message value', () => {
 
             expect(() => Joi.number().min(10).message(12)).to.throw('Invalid message options');
